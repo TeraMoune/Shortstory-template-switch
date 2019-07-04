@@ -3,7 +3,7 @@
 
 ![Image alt](https://user-images.githubusercontent.com/44625352/54727544-ae10b500-4b78-11e9-850a-0f64054bdf9f.jpg)
 
-Данный модуль не то, что есть у [Sander'ом](https://sandev.pro/web/24-pereklyuchenie-shablonov-shortstory.html), который меняет class'ы.
+Данный модуль не то, что есть у [Sander'а](https://sandev.pro/web/24-pereklyuchenie-shablonov-shortstory.html), который меняет class'ы.
 И смена вида осуществляется лишь за счёт правил CSS.
 
 Мне же данный подход не очень приглянулся, хотя бы из за того, что каждый раз видно как при загрузке страницы в начале видны стандартный вид, а потом переключает на какой нужно. Мне это напоминает полумеру.
