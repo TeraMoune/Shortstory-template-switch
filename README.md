@@ -27,12 +27,7 @@ default|Стандартный вид,thumb|Кубики миниатюр
 
 default в данном случае являеться shortstory.tpl, а **thumb** уже будет префиксом shortstory_**thumb**.tpl
 
-### Donate
-Для материальной благодарности.
+### Контакты
+Email: teramoune@gmail.com
 
-<img src="https://qiwi.com/favicon.ico" width="16" height="16"> [Qiwi](https://qiwi.me/teramoune)
-
- - Z990082286464
- - 4100115063692304 (yandex)
-
-teramoune@gmail.com на всякий случай.
+Telegram: TeraMoune
