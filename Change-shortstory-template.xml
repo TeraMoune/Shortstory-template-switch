@@ -67,73 +67,86 @@ else $cache_prefix .= "_tempate_" . $config['skin'];]]></replacecode>
 			<searchcode><![CDATA[$tpl->set ( '{speedbar}', $tpl->result['speedbar'] );]]></searchcode>
 			<replacecode><![CDATA[if( $change_template ) {
 
-if( isset($config['change_template']) AND $config['change_template'] != '' ) {
-	
-	$user_short_tpl = array();
-	$user_short_tpl_tmp = explode(',', $config['change_template']);
+    if( isset($config['change_template']) AND $config['change_template'] != '' ) {
 
-	foreach( $user_short_tpl_tmp as $val ) {
-      $val = explode('|', $val);
-      $user_short_tpl[] = array('template' => $val[0], 'name' => htmlspecialchars_decode(html_entity_decode($val[1])));
+        $user_short_tpl = array();
+        $user_short_tpl_tmp = explode(',', $config['change_template']);
+
+        foreach( $user_short_tpl_tmp as $val ) {
+          $val = explode('|', $val);
+          $user_short_tpl[] = array('template' => $val[0], 'name' => htmlspecialchars_decode(html_entity_decode($val[1])));
+        }
+
+    } else {
+
+        $user_short_tpl = array(
+            array('template' => 'default', 'name' => 'Стандарт'),
+            array('template' => 'list', 'name' => 'Список'),
+            array('template' => 'icons', 'name' => 'Иконки')
+        );
+
     }
-  
-} else {
-	
-	$user_short_tpl = array(
-		array('template' => 'default', 'name' => 'Стандарт'),
-		array('template' => 'list', 'name' => 'Список'),
-		array('template' => 'icons', 'name' => 'Иконки')
-	);
-	
-}
 
-$short_t_array = array();
-  
-foreach( $user_short_tpl as $val ) {
-  
-  if( is_array($val) ) {
-  $active_template = ' ';
-  if( $user_tpl_tmp == $val['template'] ) $active_template = ' class="current" ';
-  $short_t_array[] = '<a href="#"'.$active_template.'data-template="'.$val['template'].'">'.$val['name'].'</a>';
-  }
+    $short_t_array = array();
 
-}
-  
-$short_t_array = implode(' | ', $short_t_array);
-$short_t = <<<HTML
-   <div class="template-switcher">
-	   	<div>{$short_t_array}</div>
-	</div> 
+    foreach( $user_short_tpl as $val ) {
+
+      if( is_array($val) ) {
+      $active_template = ' ';
+      if( $user_tpl_tmp == $val['template'] ) $active_template = ' class="current" ';
+      $short_t_array[] = '<a href="#"'.$active_template.'data-template="'.$val['template'].'">'.$val['name'].'</a>';
+      }
+
+    }
+
+    $short_t_array = implode(' | ', $short_t_array);
+    $short_t = <<<HTML
+       <div class="template-switcher">
+            <div>{$short_t_array}</div>
+        </div> 
 HTML;
 
-$onload_scripts[] = <<<HTML
-    $(".template-switcher a[data-template]").click(function(){
-        if($(this).hasClass('current')) return false;
-        $(this).addClass('current').siblings().removeClass('current');
-        Cookie.create('short_template', $(this).data('template'), {
-			expires: 8760,
-			path: '/'
-		});
-        
-        $.post(dle_root + "engine/ajax/controller.php?mod=change_template", {short_template: $(this).data('template'), user_hash: dle_login_hash}, function(data) {
-		
-        	$('#dle-content').html(data);
-            $('[title]').tooltipster();
-            new LazyLoad({
-                elements_selector: "img[data-src], span[data-bg], iframe[data-src]",
-                threshold: 0
+    $onload_scripts[] = <<<HTML
+        $(".template-switcher a[data-template]").click(function(){
+            if($(this).hasClass('current')) return false;
+            $(this).addClass('current').siblings().removeClass('current');
+            var new_templ 	= $(this).data('template'),
+                old_templ 	= Cookie.read('short_template');
+
+            Cookie.create('short_template', new_templ, {
+                expires: 8760,
+                path: '/'
             });
             
-        });        
-        
-        //window.location.href=location.href;        
-        return false;
-    });
-HTML;
-  
-$tpl->set ( '{change_short_template}',  $short_t);
+			ShowLoading('');
+            
+            $.post(dle_root + "engine/ajax/controller.php?mod=change_template", {short_template: new_templ, user_hash: dle_login_hash}, function(data) {
 
-} else $tpl->set ( '{change_short_template}',  '');]]></replacecode>
+                $('body').removeClass(old_templ).addClass(new_templ);
+                $('#dle-content').html(data);
+                $('[title]').tooltipster();
+                new LazyLoad({
+                    elements_selector: "img[data-src], span[data-bg], iframe[data-src]",
+                    threshold: 0
+                });
+				
+                HideLoading('');
+                
+            });        
+
+            //window.location.href=location.href;        
+            return false;
+        });
+HTML;
+
+    $tpl->set ( '{change_short_template}',  $short_t);
+
+} else $tpl->set ( '{change_short_template}',  '');
+$tpl->set ( '{templates-class}',  $user_tpl_tmp);]]></replacecode>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA["<div id='dle-content'>"]]></searchcode>
+			<replacecode><![CDATA["<div id='dle-content' class=\"mod-{$dle_module}\">"]]></replacecode>
 		</operation>
 	</file>
 	<file name="engine/inc/options.php">
@@ -198,8 +211,11 @@ if( function_exists('favorites_list') ) {
     fav_loadData();
   
 }
+$collections_select = "";
 
 if( function_exists('show_collections') ) {
+  
+  	$collections_select = ", p.collections";
   
     $collections_info = get_vars ( "collections" );
 
@@ -388,7 +404,7 @@ if( $category_id ) {
 			
 	if ($user_group[$member_id['user_group']]['allow_short']) { $stop_list = ""; $cat_join = ""; $cat_join_count = ""; }
 			
-	$sql_select = "SELECT p.id, p.autor, p.date, p.short_story, CHAR_LENGTH(p.full_story) as full_story, p.full_story as full_story_text, p.xfields, p.title, p.category, p.alt_name, p.comm_num, p.allow_comm, p.fixed, p.tags, p.collections, e.news_read, e.allow_rate, e.rating, e.vote_num, e.votes, e.view_edit, e.editdate, e.editor, e.reason FROM " . PREFIX . "_post p {$cat_join}LEFT JOIN " . PREFIX . "_post_extras e ON (p.id=e.news_id) WHERE {$stop_list}approve=1 AND allow_main=1" . $where_date . " ORDER BY " . $fixed . $news_sort_by . " " . $news_direction_by . " LIMIT " . $cstart . "," . $config['news_number'];
+	$sql_select = "SELECT p.id, p.autor, p.date, p.short_story, CHAR_LENGTH(p.full_story) as full_story, p.full_story as full_story_text, p.xfields, p.title, p.category, p.alt_name, p.comm_num, p.allow_comm, p.fixed, p.tags{$collections_select}, e.news_read, e.allow_rate, e.rating, e.vote_num, e.votes, e.view_edit, e.editdate, e.editor, e.reason FROM " . PREFIX . "_post p {$cat_join}LEFT JOIN " . PREFIX . "_post_extras e ON (p.id=e.news_id) WHERE {$stop_list}approve=1 AND allow_main=1" . $where_date . " ORDER BY " . $fixed . $news_sort_by . " " . $news_direction_by . " LIMIT " . $cstart . "," . $config['news_number'];
 
 	$sql_count = "SELECT COUNT(*) as count FROM " . PREFIX . "_post {$cat_join_count}WHERE {$stop_list}approve=1 AND allow_main=1" . $where_date;
 
