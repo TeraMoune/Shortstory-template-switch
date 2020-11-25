@@ -27,6 +27,8 @@ default|Стандартный вид,thumb|Кубики миниатюр
 
 default в данном случае являеться shortstory.tpl, а **thumb** уже будет префиксом shortstory_**thumb**.tpl
 
+В main.tpl или других шаблонах тегом **{change_short_template}** выводится переключатель.
+
 ### Контакты
 Email: teramoune@gmail.com
 
