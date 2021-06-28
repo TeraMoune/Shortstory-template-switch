@@ -32,4 +32,12 @@ default в данном случае являеться shortstory.tpl, а **thu
 ### Контакты
 Email: teramoune@gmail.com
 
+### На печеньки...
+> ЮMoney: 4100115063692304
+> 
+> Qiwi nickname: TERAMOUNE
+> 
+> Wmz: Z990082286464
+> 
+> Wmr: R425445633105
 Telegram: TeraMoune
