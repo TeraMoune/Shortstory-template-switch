@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <dleplugin>
-	<name>Change shortstory template</name>
-	<description>https://teramoune.info/free/8-change-shortstory-template.html</description>
+	<name>Ajax change shortstory template</name>
+	<description>Смена шаблонов кратких новостей без перезагрузки страницы с отдельными независимыми шаблонами, а не какие-то переключении классов и стилей.</description>
 	<icon></icon>
 	<version></version>
-	<dleversion>14</dleversion>
+	<dleversion>13</dleversion>
 	<versioncompare>greater</versioncompare>
 	<upgradeurl></upgradeurl>
-	<filedelete>0</filedelete>
+	<filedelete>1</filedelete>
 	<needplugin></needplugin>
-	<mnotice>0</mnotice>
+	<mnotice>1</mnotice>
 	<mysqlinstall><![CDATA[]]></mysqlinstall>
 	<mysqlupgrade><![CDATA[]]></mysqlupgrade>
 	<mysqlenable><![CDATA[]]></mysqlenable>
@@ -20,29 +20,26 @@
 	<phpenable><![CDATA[]]></phpenable>
 	<phpdisable><![CDATA[]]></phpdisable>
 	<phpdelete><![CDATA[]]></phpdelete>
-	<notice><![CDATA[]]></notice>
+	<notice><![CDATA[@TeraMoune]]></notice>
 	<file name="engine/init.php">
 		<operation action="after">
-			<searchcode><![CDATA[if( $config['start_site'] == 3 AND !$_SERVER['QUERY_STRING'] AND !$_POST['do']) {
-	$dle_module = "main";
-}]]></searchcode>
-			<replacecode><![CDATA[$user_tpl_tmp = isset($_COOKIE['short_template']) ? totranslit($_COOKIE['short_template']) : 'default';
+			<searchcode><![CDATA[$tpl->clear();]]></searchcode>
+			<replacecode><![CDATA[$user_tpl_tmp 		= isset($_COOKIE['short_template']) ? totranslit($_COOKIE['short_template']) : 'default';
+$change_template	= false;
+$allt 				= array();
 
-$change_template = false;
-$allt = array();
+$template_menu 		= array(
+  		'default'	=> 'Стандарт',
+  		'thumb'		=> 'Компактный'
+);
 
-if( isset($config['change_template']) AND $config['change_template'] != '' ) {
-  $user_short_tpl_tmp = explode(',', $config['change_template']);
-  if( count($user_short_tpl_tmp) > 1 AND ($dle_module == 'main' OR $dle_module == 'cat') ) $change_template = true;
-  
-  foreach($user_short_tpl_tmp as $val) {
-	  $val = explode('|',$val);
-	  $allt[$val[0]] = $val[0];
-  }
-} 
+$change_tpl_mod = array('main', 'cat', 'xfsearch');
 
-if( !in_array( $user_tpl_tmp, $allt  ) ) $user_tpl_tmp = 'default';
-else $user_tpl_tmp = $allt[$user_tpl_tmp];]]></replacecode>
+if( count($template_menu) > 1 AND in_array($dle_module, $change_tpl_mod) ) $change_template = true;
+
+
+if( !isset( $template_menu[$user_tpl_tmp] ) ) $user_tpl_tmp = 'default';]]></replacecode>
+			<enabled>1</enabled>
 		</operation>
 	</file>
 	<file name="engine/engine.php">
@@ -50,16 +47,19 @@ else $user_tpl_tmp = $allt[$user_tpl_tmp];]]></replacecode>
 			<searchcode><![CDATA[$cache_prefix .= "_tempate_" . $config['skin'];]]></searchcode>
 			<replacecode><![CDATA[if( $user_tpl_tmp != 'default' AND $change_template ) $cache_prefix .= "_tempate_" . $user_tpl_tmp . "_" .  $config['skin'];
 else $cache_prefix .= "_tempate_" . $config['skin'];]]></replacecode>
+			<enabled>1</enabled>
 		</operation>
 	</file>
 	<file name="engine/modules/show.short.php">
 		<operation action="before">
 			<searchcode><![CDATA[if( $view_template != "rss" ) {]]></searchcode>
 			<replacecode><![CDATA[$user_tpl = ($user_tpl_tmp == 'default' OR !$change_template) ? 'shortstory.tpl' : 'shortstory_'.$user_tpl_tmp.'.tpl';]]></replacecode>
+			<enabled>1</enabled>
 		</operation>
 		<operation action="replace">
 			<searchcode><![CDATA[( 'shortstory.tpl' )]]></searchcode>
 			<replacecode><![CDATA[( $user_tpl )]]></replacecode>
+			<enabled>1</enabled>
 		</operation>
 	</file>
 	<file name="engine/modules/main.php">
@@ -67,35 +67,14 @@ else $cache_prefix .= "_tempate_" . $config['skin'];]]></replacecode>
 			<searchcode><![CDATA[$tpl->set ( '{speedbar}', $tpl->result['speedbar'] );]]></searchcode>
 			<replacecode><![CDATA[if( $change_template ) {
 
-    if( isset($config['change_template']) AND $config['change_template'] != '' ) {
-
-        $user_short_tpl = array();
-        $user_short_tpl_tmp = explode(',', $config['change_template']);
-
-        foreach( $user_short_tpl_tmp as $val ) {
-          $val = explode('|', $val);
-          $user_short_tpl[] = array('template' => $val[0], 'name' => htmlspecialchars_decode(html_entity_decode($val[1])));
-        }
-
-    } else {
-
-        $user_short_tpl = array(
-            array('template' => 'default', 'name' => 'Стандарт'),
-            array('template' => 'list', 'name' => 'Список'),
-            array('template' => 'icons', 'name' => 'Иконки')
-        );
-
-    }
-
     $short_t_array = array();
 
-    foreach( $user_short_tpl as $val ) {
+    foreach( $template_menu as $key => $val ) {
 
-      if( is_array($val) ) {
-      $active_template = ' ';
-      if( $user_tpl_tmp == $val['template'] ) $active_template = ' class="current" ';
-      $short_t_array[] = '<a href="#"'.$active_template.'data-template="'.$val['template'].'">'.$val['name'].'</a>';
-      }
+      	$active_template = ' ';
+      	if( $user_tpl_tmp == $key ) $active_template = ' class="current" ';
+
+      	$short_t_array[] = '<a href="#"'.$active_template.'data-template="'.$key.'">'.$val.'</a>';
 
     }
 
@@ -108,67 +87,48 @@ HTML;
 
     $onload_scripts[] = <<<HTML
         $(".template-switcher a[data-template]").click(function(){
-            if($(this).hasClass('current')) return false;
+        
+            if( $(this).hasClass('current') ) return false;
             $(this).addClass('current').siblings().removeClass('current');
-            var new_templ 	= $(this).data('template'),
-                old_templ 	= Cookie.read('short_template');
-
-            Cookie.create('short_template', new_templ, {
-                expires: 8760,
-                path: '/'
-            });
+            
+            let new_templ 	= $(this).data('template');
+                
+			setcookie('short_template', new_templ);
             
 			ShowLoading('');
             
-            $.post(dle_root + "engine/ajax/controller.php?mod=change_template", {short_template: new_templ, user_hash: dle_login_hash}, function(data) {
-
-                $('body').removeClass(old_templ).addClass(new_templ);
-                $('#dle-content').html(data);
-                $('[title]').tooltipster();
-                new LazyLoad({
-                    elements_selector: "img[data-src], span[data-bg], iframe[data-src]",
-                    threshold: 0
-                });
+            $.post(dle_root + "engine/ajax/controller.php?mod=change_template", {short_template: new_templ, user_hash: dle_login_hash}, function(response) {
 				
-                HideLoading('');
-                
-            });        
+                if( response.success ) {
 
-            //window.location.href=location.href;        
+                    //Объект куда вставлять разметку ответа.
+                    $('#content').find('.left-content > div').eq(0).html(response.returnbox);
+                    $('#content').find('.left-content > div').eq(0).append(response.navigation);
+
+                } else {
+
+                	DLEAlert('Ошибка', 'Так-вот');
+
+                }
+                
+                HideLoading('');
+
+            }, 'json');        
+      
             return false;
         });
 HTML;
 
     $tpl->set ( '{change_short_template}',  $short_t);
 
-} else $tpl->set ( '{change_short_template}',  '');
+} else {
+  
+  	$tpl->set ( '{change_short_template}',  '');
+  
+}
+
 $tpl->set ( '{templates-class}',  $user_tpl_tmp);]]></replacecode>
-		</operation>
-		<operation action="replace">
-			<searchcode><![CDATA["<div id='dle-content'>"]]></searchcode>
-			<replacecode><![CDATA["<div id='dle-content' class=\"mod-{$dle_module}\">"]]></replacecode>
-		</operation>
-	</file>
-	<file name="engine/inc/options.php">
-		<operation action="after">
-			<searchcode><![CDATA[showRow( $lang['opt_sys_biw'], $lang['opt_sys_biwd'], makeCheckBox( "save_con[bbimages_in_wysiwyg]", "{$config['bbimages_in_wysiwyg']}" ) );]]></searchcode>
-			<replacecode><![CDATA[showRow( $lang['change_template'], $lang['change_template_2'], "<textarea class=\"classic\" style=\"width:100%;height:150px;\" name=\"save_con[change_template]\">{$config['change_template']}</textarea>" );]]></replacecode>
-		</operation>
-		<operation action="before">
-			<searchcode><![CDATA[$save_con['offline_reason'] = trim(strip_tags(stripslashes( $save_con['offline_reason'] )));]]></searchcode>
-			<replacecode><![CDATA[$save_con['change_template'] = trim(stripslashes( $save_con['change_template'] ));
-$save_con['change_template'] = htmlspecialchars( $save_con['change_template'], ENT_QUOTES, $config['charset']);]]></replacecode>
-		</operation>
-		<operation action="replace">
-			<searchcode><![CDATA[if( $name != "offline_reason" ) {]]></searchcode>
-			<replacecode><![CDATA[if( $name != "offline_reason" AND $name != "change_template" ) {]]></replacecode>
-		</operation>
-	</file>
-	<file name="language/Russian/adminpanel.lng">
-		<operation action="after">
-			<searchcode><![CDATA['wysiwyg_language'		=>  "ru",]]></searchcode>
-			<replacecode><![CDATA['change_template'		=>  "Список шаблонов",
-'change_template_2'		=>  "Перечислите шаблоны для смены<br />Пример: <strong>default</strong>-<strong>Стандарт</strong> | <strong>list</strong>-<strong>Список</strong> | <strong>icons</strong>-<strong>Иконки</strong><br /><br />Префикс шаблона - Текст или картинка<br /> - default = shortstory.tpl<br /> - list = shortstory_<strong>list</strong>.tpl<br />Для отключения смены оставьте один шаблон. Пустое поле задействует стандартный набор смены шаблонов.",]]></replacecode>
+			<enabled>1</enabled>
 		</operation>
 	</file>
 	<file name="engine/ajax/change_template.php">
@@ -180,13 +140,17 @@ if(!defined('DATALIFEENGINE')) {
 	die( "Hacking attempt!" );
 }
 
-$func_nav = ' onclick="return nav.go(this.href);" ';
-$func_nav_top = ' onclick="return nav.go(this.href, 1);" ';
+$func_nav 		= ' onclick="return nav.go(this.href);" ';
+$func_nav_top 	= ' onclick="return nav.go(this.href, 1);" ';
 
-require_once (DLEPlugins::Check(ENGINE_DIR . '/classes/templates.class.php'));
+if( !version_compare($config['version_id'], 15, ">=") ) {
 
-$tpl = new dle_template( );
-$tpl->dir = ROOT_DIR . '/templates/' . $config['skin'];
+	require_once (DLEPlugins::Check(ENGINE_DIR . '/classes/templates.class.php'));
+
+}
+
+$tpl 		= new dle_template( );
+$tpl->dir 	= ROOT_DIR . '/templates/' . $config['skin'];
 define( 'TEMPLATE_DIR', $tpl->dir );
 
 if( function_exists('favorites_list') ) {
@@ -259,26 +223,25 @@ if( $config['allow_alt_url'] ) {
 if ($category[1] != '') $category_id = get_ID( $cat_info, $category[1] );
 else $category_id = false;
 
+
 $short_template = (isset($_POST["short_template"]) AND is_string($_POST["short_template"])) ? totranslit($_POST["short_template"]) : false;
-$cstart = (isset($cstart[1]) && is_numeric($cstart[1])) ? intval($cstart[1]) : 0;
+$cstart 		= (isset($cstart[1]) && is_numeric($cstart[1])) ? intval($cstart[1]) : 0;
 if(!$short_template) $short_template = 'default';
 
-$change_template = false;
-$allow_active_news = true;
-$allt = array();
+$change_template 	= false;
+$allow_active_news 	= true;
 
-if( isset($config['change_template']) AND $config['change_template'] != '' ) {
-  $user_short_tpl_tmp = explode(',', $config['change_template']);
-  if( count($user_short_tpl_tmp) > 1 ) $change_template = true;
-  foreach($user_short_tpl_tmp as $val) {
-	  $val = explode('|',$val);
-	  $allt[$val[0]] = $val[0];
-  }
-} 
+$template_menu 		= array(
+  		'default'	=> 'Стандарт',
+  		'thumb'		=> 'Компактный'
+);
 
-if( !in_array( $short_template, $allt  ) ) $user_tpl_tmp = 'default';
-else $user_tpl_tmp = $allt[$short_template];
+if( count($template_menu) > 1 ) $change_template = true;
 
+
+if( !isset( $template_menu[$short_template] ) ) $user_tpl_tmp = 'default';
+else $user_tpl_tmp = $short_template;
+  
 $thisdate = date ( "Y-m-d H:i:s", time () );
 
 if ($config['no_date'] AND !$config['news_future']) $where_date = " AND date < '" . $thisdate . "'";
@@ -288,17 +251,20 @@ if ($config['allow_fixed']) $fixed = "fixed desc, ";
 else $fixed = "";
 
 $allow_list = explode ( ',', $user_group[$member_id['user_group']]['allow_cats'] );
-$stop_list = "";
-$cat_join = "";
+$stop_list 		= "";
+$cat_join 		= "";
 $cat_join_count = "";
 
-$news_sort_by = ($config['news_sort']) ? $config['news_sort'] : "date";
-$news_direction_by = ($config['news_msort']) ? $config['news_msort'] : "DESC";
+$news_sort_by 		= ($config['news_sort']) 	? $config['news_sort'] 	: "date";
+$news_direction_by 	= ($config['news_msort']) 	? $config['news_msort'] : "DESC";
+$start_news			= $config['news_number'];
 
 if ($cstart) {
-	$cstart = $cstart - 1;
-	$cstart = $cstart * $config['news_number'];
+	$start_news = $cstart * $config['news_number'];
+	$cstart 	= $cstart - 1;
+	$cstart 	= $cstart * $config['news_number'];
 }
+
 
 if( $category_id ) {
 
@@ -330,22 +296,22 @@ if( $category_id ) {
 	if ($cat_info[$category_id]['news_msort']) $news_direction_by = $cat_info[$category_id]['news_msort'];
 	if ($cat_info[$category_id]['news_number']) $config['news_number'] = $cat_info[$category_id]['news_number'];
 
-	$url_page = $config['http_home_url'] . get_url ( $category_id );
+	$url_page 	= $config['http_home_url'] . get_url ( $category_id );
 	$user_query = "do=cat&amp;category=" . $cat_info[$category_id]['alt_name'];
 			
 	if( $config['allow_alt_url'] ) $canonical = $url_page . "/"; else $canonical = $PHP_SELF."?do=cat&category=" . $cat_info[$category_id]['alt_name'];
 		
 	if ($config['allow_multi_category']) {
 		
-		$get_cats = str_replace ( "|", "','", $get_cats );
-		$join_category = "INNER JOIN (SELECT DISTINCT(" . PREFIX . "_post_extras_cats.news_id) FROM " . PREFIX . "_post_extras_cats WHERE cat_id IN ('" . $get_cats . "')) c ON (p.id=c.news_id) ";
+		$get_cats 		= str_replace ( "|", "','", $get_cats );
+		$join_category 	= "INNER JOIN (SELECT DISTINCT(" . PREFIX . "_post_extras_cats.news_id) FROM " . PREFIX . "_post_extras_cats WHERE cat_id IN ('" . $get_cats . "')) c ON (p.id=c.news_id) ";
 		$where_category = "";
 				
 	} else {
 				
 		if ( $allow_sub_cats ) {
 					
-			$get_cats = str_replace ( "|", "','", $get_cats );
+			$get_cats 		= str_replace ( "|", "','", $get_cats );
 			$where_category = "category IN ('" . $get_cats . "') AND ";
 				
 		} else {
@@ -361,7 +327,7 @@ if( $category_id ) {
 	if (isset ( $_SESSION['dle_sort_cat_'.$category_id] )) $news_sort_by = $_SESSION['dle_sort_cat_'.$category_id];
 	if (isset ( $_SESSION['dle_direction_cat_'.$category_id] )) $news_direction_by = $_SESSION['dle_direction_cat_'.$category_id];
 				
-	$sql_select = "SELECT p.id, p.autor, p.date, p.short_story, CHAR_LENGTH(p.full_story) as full_story, p.xfields, p.title, p.category, p.alt_name, p.comm_num, p.allow_comm, p.fixed, p.tags, e.news_read, e.allow_rate, e.rating, e.vote_num, e.votes, e.view_edit, e.editdate, e.editor, e.reason FROM " . PREFIX . "_post p {$join_category}LEFT JOIN " . PREFIX . "_post_extras e ON (p.id=e.news_id) WHERE {$where_category}approve=1" . $where_date . " ORDER BY " . $fixed . $news_sort_by . " " . $news_direction_by . " LIMIT " . $cstart . "," . $config['news_number'];
+	$sql_select = "SELECT p.id, p.autor, p.date, p.short_story, CHAR_LENGTH(p.full_story) as full_story, p.xfields, p.title, p.category, p.alt_name, p.comm_num, p.allow_comm, p.fixed, p.tags, e.news_read, e.allow_rate, e.rating, e.vote_num, e.votes, e.view_edit, e.editdate, e.editor, e.reason FROM " . PREFIX . "_post p {$join_category}LEFT JOIN " . PREFIX . "_post_extras e ON (p.id=e.news_id) WHERE {$where_category}approve=1" . $where_date . " ORDER BY " . $fixed . $news_sort_by . " " . $news_direction_by . " LIMIT " . $cstart . "," . $start_news;
 	$sql_count = "SELECT COUNT(*) as count FROM " . PREFIX . "_post p {$join_category}WHERE {$where_category}approve=1" . $where_date;
 		
 } else {
@@ -410,10 +376,13 @@ if( $category_id ) {
 
 }
 
+if( $tmp_cstart ) $cstart = $tmp_cstart;
+$custom_navigation = true;
 include_once (DLEPlugins::Check(ENGINE_DIR . '/modules/show.short.php'));
 
 $tpl->result['content'] = str_ireplace( '{THEME}', $config['http_home_url'] . 'templates/' . $config['skin'], $tpl->result['content'] );
-$tpl->result['content'] = str_ireplace ( '{newsnavigation}', $tpl->result['navigation'], $tpl->result['content'] );
+$tpl->result['content'] = str_ireplace ( '{newsnavigation}', ($custom_navigation ? '' : $tpl->result['navigation']), $tpl->result['content'] );
+
 if( stripos ( $tpl->result['content'], "{favorites-list" ) !== false AND $news_found ) {
 
 	if( file_exists( ROOT_DIR . '/templates/' . $config['skin'] . "/modules/fav_list.tpl" ) ) {
@@ -425,8 +394,45 @@ if( stripos ( $tpl->result['content'], "{favorites-list" ) !== false AND $news_f
   
 }
 
-echo $tpl->result['content'];
+if( version_compare($config['version_id'], 15, ">=") ) {
+  
+    if( $is_logged AND stripos ( $tpl->result['content'], "-favorites-" ) !== false) {
+
+        $fav_arr = explode(',', $member_id['favorites'] );
+
+        foreach( $fav_arr as $fav_id ) {
+            $tpl->result['content'] = str_replace ( "{-favorites-{$fav_id}}", "<a id=\"fav-id-{$fav_id}\" class=\"favorite-link del-favorite\" href=\"{$PHP_SELF}?do=favorites&amp;doaction=del&amp;id={$fav_id}\"><img src=\"{$config['http_home_url']}templates/{$config['skin']}/dleimages/minus_fav.gif\" onclick=\"doFavorites('{$fav_id}', 'minus', 0); return false;\" title=\"{$lang['news_minfav']}\" alt=\"\"></a>", $tpl->result['content'] );
+            $tpl->result['content'] = str_replace ( "[del-favorites-{$fav_id}]", "<a id=\"fav-id-{$fav_id}\" onclick=\"doFavorites('{$fav_id}', 'minus', 1); return false;\" href=\"{$PHP_SELF}?do=favorites&amp;doaction=del&amp;id={$fav_id}\">", $tpl->result['content'] );
+            $tpl->result['content'] = str_replace ( "[/del-favorites-{$fav_id}]", "</a>", $tpl->result['content'] );
+            $tpl->result['content'] = preg_replace( "'\\[add-favorites-{$fav_id}\\](.*?)\\[/add-favorites-{$fav_id}\\]'is", "", $tpl->result['content'] );
+        }
+
+        $tpl->result['content'] = preg_replace( "'\\{-favorites-(\d+)\\}'i", "<a id=\"fav-id-\\1\" class=\"favorite-link add-favorite\" href=\"{$PHP_SELF}?do=favorites&amp;doaction=add&amp;id=\\1\"><img src=\"{$config['http_home_url']}templates/{$config['skin']}/dleimages/plus_fav.gif\" onclick=\"doFavorites('\\1', 'plus', 0); return false;\" title=\"{$lang['news_addfav']}\" alt=\"\"></a>", $tpl->result['content'] );
+        $tpl->result['content'] = preg_replace( "'\\[add-favorites-(\d+)\\]'i", "<a id=\"fav-id-\\1\" onclick=\"doFavorites('\\1', 'plus', 1); return false;\" href=\"{$PHP_SELF}?do=favorites&amp;doaction=add&amp;id=\\1\">", $tpl->result['content'] );
+        $tpl->result['content'] = preg_replace( "'\\[/add-favorites-(\d+)\\]'i", "</a>", $tpl->result['content'] );
+        $tpl->result['content'] = preg_replace( "'\\[del-favorites-(\d+)\\](.*?)\\[/del-favorites-(\d+)\\]'si", "", $tpl->result['content'] );
+
+    }
+
+}
+
+if( function_exists('dateDiff') ) {
+
+	if (stripos ( $tpl->result['content'], "{date-diff=" ) !== false) {
+		$tpl->result['content'] = preg_replace_callback ( "#\\{date-diff=(.*?)\\}#is", 'dateDiff', $tpl->result['content'] );
+	}
+
+}
+
+$return_array 		= array (
+	'success' 		=> true,
+	'returnbox' 	=> $tpl->result['content'],
+	'navigation' 	=> $tpl->result['navigation'],
+);
+		
+echo json_encode($return_array, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
 ?>]]></replacecode>
+			<enabled>1</enabled>
 		</operation>
 	</file>
 </dleplugin>
