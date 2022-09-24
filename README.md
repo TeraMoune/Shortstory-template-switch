@@ -1,6 +1,8 @@
 # Change-shortstory-template
 Переключатель шаблонов коротких новостей.
 
+DLE: 14>
+
 ![Image alt](https://user-images.githubusercontent.com/44625352/54727544-ae10b500-4b78-11e9-850a-0f64054bdf9f.jpg)
 
 ---
