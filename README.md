@@ -1,5 +1,5 @@
-# Change-shortstory-template
-Переключатель шаблонов коротких новостей.
+# Switch shortstory template
+Ajax переключатель шаблонов коротких новостей.
 
 DLE: 14>
 
