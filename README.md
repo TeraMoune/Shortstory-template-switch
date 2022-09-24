@@ -35,38 +35,38 @@ DLE: 14>
 2. Для изменения JavaScript кода переключателя делается в правках файла `engine/modules/main.php`. В коде представленом ниже.
 
 ```php
-    $onload_scripts[] 	= <<<HTML
-        $(".template-switcher a[data-template]").click(function(){
+$onload_scripts[] 	= <<<HTML
+$(".template-switcher a[data-template]").click(function(){
 
-            if( $(this).hasClass('current') ) return false;
-            $(this).addClass('current').siblings().removeClass('current');
+	if( $(this).hasClass('current') ) return false;
+	$(this).addClass('current').siblings().removeClass('current');
 
-            let new_templ 	= $(this).data('template');
-            let content_block 	= $('#content').find('.left-content > div').eq(0);
+	let new_templ 		= $(this).data('template');
+	let content_block 	= $('#content').find('.left-content > div').eq(0);
 				
-            setcookie('short_template', new_templ);
+	setcookie('short_template', new_templ);
 
-	    ShowLoading();
+	ShowLoading();
             
-            $.post(dle_root + "engine/ajax/controller.php?mod=change_template", {user_hash: dle_login_hash}, function(response) {
+	$.post(dle_root + "engine/ajax/controller.php?mod=change_template", {user_hash: dle_login_hash}, function(response) {
 				
-                if( response.success ) {
+		if( response.success ) {
 
-                	content_block.html(response.returnbox);
-                    	content_block.append(response.navigation);
+			content_block.html(response.returnbox);
+			content_block.append(response.navigation);
 
-                } else {
+		} else {
 
-                	DLEAlert('Ошибка', 'Так-вот');
+			DLEAlert('Ошибка', 'Так-вот');
 
-                }
-                
-                HideLoading();
+		}
 
-            }, 'json');        
+		HideLoading();
+
+	}, 'json');        
       
-            return false;
-        });
+	return false;
+});
 HTML;
 ```
 > **let content_block 	= $('#content').find('.left-content > div').eq(0);** Если объяснить коротко, то код ищет объект с конкретным атрибутом `id="content"` если есть то в нём же пытается найти дочерние объекты с атрибутом `class="left-content"` в котором находится `div`. В него то и будет помещена разметка из шаблонов кратких новостей которая содержится в переменной data.
