@@ -1,4 +1,4 @@
-# Switch shortstory template
+# Shortstory template switch
 Ajax переключатель шаблонов кратких новостей.
 
 DLE: 14>
